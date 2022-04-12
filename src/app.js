@@ -7,7 +7,6 @@ App = {
     await App.loadAccount()
     await App.loadContract()
     await App.render()
-    await App.renderTasks()
   },
 
   // https://medium.com/metamask/https-medium-com-metamask-breaking-change-injecting-web3-7722797916a8
@@ -51,19 +50,19 @@ App = {
     const todoList = await $.getJSON('TodoList.json')
     App.contracts.TodoList = TruffleContract(todoList)
     App.contracts.TodoList.setProvider(App.web3Provider)
-    
+
     App.todoList = await App.contracts.TodoList.deployed()
   },
 
   render: async () => {
-    if(App.loading) {
+    if (App.loading) {
       return
     }
 
     App.setLoading(true)
 
     $('#account').html(App.account)
-
+    await App.renderTasks()
     App.setLoading(false)
   },
 
@@ -82,7 +81,7 @@ App = {
       $newTaskTemplate.find('input')
                       .prop('name', taskId)
                       .prop('checked', taskCompleted)
-                      // .on('click', App.toggleCompleted)
+                      .on('click', App.toggleCompleted)
 
       if (taskCompleted) {
         $('#completedTaskList').append($newTaskTemplate)
@@ -91,8 +90,21 @@ App = {
       }
 
       $newTaskTemplate.show()
-                
     }
+  },
+  
+  createTask: async () => {
+    App.setLoading(true)
+    const content = $('#newTask').val()
+    await App.todoList.createTask(content)
+    window.location.reload()
+  },
+
+  toggleCompleted: async (e) => {
+    App.setLoading(true)
+    const taskId = e.target.name
+    await App.todoList.toggleCompleted(taskId)
+    window.location.reload()
   },
 
   setLoading: (boolean) => {
@@ -107,11 +119,10 @@ App = {
       content.show()
     }
   }
-
 }
 
 $(() => {
   $(window).load(() => {
-    App.load();
-  });
+    App.load()
+  })
 })
